@@ -8,7 +8,7 @@ data class CreditoValorFuturoRequest(
         val tasaCompensatoria:TasaRequest,
         val tasaMoratoria:TasaRequest,
         val pagoInicial:Float,
-        val fechaDesembolso:LocalDate,
+        val fechaDesembolso:LocalDate = LocalDate.now(),
         val fechaVencimiento:LocalDate
 
 )

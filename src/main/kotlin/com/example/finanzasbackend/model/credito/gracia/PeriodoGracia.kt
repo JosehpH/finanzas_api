@@ -13,7 +13,7 @@ abstract class PeriodoGracia {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id:Long = 0
     var numCuotas:Int = 0
-
+    var saldoPendiente:Float=0f
     constructor(numCuotas: Int) {
         this.numCuotas = numCuotas
     }

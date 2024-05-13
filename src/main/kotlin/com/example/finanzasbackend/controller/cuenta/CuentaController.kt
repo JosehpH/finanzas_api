@@ -3,6 +3,7 @@ package com.example.finanzasbackend.controller.cuenta
 import com.example.finanzasbackend.dto.credito.*
 import com.example.finanzasbackend.dto.cuenta.*
 import com.example.finanzasbackend.dto.cuota.CuotaResponse
+import com.example.finanzasbackend.dto.gracia.GraciaResponse
 import com.example.finanzasbackend.dto.tasa.TasaRequest
 import com.example.finanzasbackend.model.Cuenta
 import com.example.finanzasbackend.model.credito.Credito
@@ -93,9 +94,10 @@ class CuentaController(
 
                 )
     }
+
     private fun CreditoValoFuturo.toCreditoValorFuturoResponse(): CreditoValorFuturoResponse {
         return CreditoValorFuturoResponse(
-                id=this.id,
+                id = this.id,
                 tipoCredito = "VALOR FUTURO",
                 saldo = this.saldo,
                 pagoInicial = this.pagoInicial,
@@ -133,9 +135,10 @@ class CuentaController(
                 )
         )
     }
+
     private fun Cuenta.toCuentaResponse(): CuentaResponse {
         val creditos: List<CreditoResponse?> = this.creditos.map {
-            if(it is CreditoValoFuturo)
+            if (it is CreditoValoFuturo)
                 it.toCreditoValorFuturoResponse()
             else
                 (it as CreditoAnualidad).toResponse()
@@ -148,7 +151,8 @@ class CuentaController(
                 creditos = creditos
         )
     }
-    private fun CreditoAnualidadesRequest.toCredito():CreditoAnualidad{
+
+    private fun CreditoAnualidadesRequest.toCredito(): CreditoAnualidad {
         //Tasa compensatoria a entidad
         val tasac: TasaInteres
         if (this.tasaCompensatoria.tipo == TipoTasaInteres.NOMINAL.name)
@@ -177,10 +181,10 @@ class CuentaController(
         )
 
         //Periodo de gracia a entidad
-        val periodoGracia:PeriodoGracia?
-        if(this.gracia==null)
+        val periodoGracia: PeriodoGracia?
+        if (this.gracia == null)
             periodoGracia = null
-        else if(this.gracia.tipo == TipoPeriodoGracia.TOTAL.name)
+        else if (this.gracia.tipo == TipoPeriodoGracia.TOTAL.name)
             periodoGracia = PeriodoGraciaTotal(numCuotas = this.gracia.numCuotas)
         else if (this.gracia.tipo == TipoPeriodoGracia.PARCIAL.name)
             periodoGracia = PeriodoGraciaParcial(numCuotas = this.gracia.numCuotas)
@@ -198,9 +202,10 @@ class CuentaController(
                 periodoGracia = periodoGracia
         )
     }
-    private fun CreditoAnualidad.toResponse():CreditoAnualidadesResponse{
+
+    private fun CreditoAnualidad.toResponse(): CreditoAnualidadesResponse {
         //Mapeo de cuotas a Response
-        val cuotas:List<CuotaResponse> = this.cuotas.map {
+        val cuotas: List<CuotaResponse> = this.cuotas.map {
             CuotaResponse(
                     id = it.id,
                     fechaVencimiento = it.fechaVencimiento,
@@ -215,9 +220,23 @@ class CuentaController(
                     interesCompensatorioMora = it.interesCompensatorioMora
             )
         }
+        var gracia: GraciaResponse? = null
+        if (this.periodoGracia != null) {
+            var tipo: String
+            if (this.periodoGracia!! is PeriodoGraciaTotal)
+                tipo = TipoPeriodoGracia.TOTAL.name
+            else
+                tipo = TipoPeriodoGracia.PARCIAL.name
 
+            gracia = GraciaResponse(
+                    id = this.periodoGracia!!.id,
+                    numCuotas = this.periodoGracia!!.numCuotas.toLong(),
+                    tipo =tipo,
+                    saldoRestante = this.periodoGracia!!.saldoPendiente
+                    )
+        }
         return CreditoAnualidadesResponse(
-                id=this.id,
+                id = this.id,
                 tipoCredito = "ANUALIDADES",
                 saldo = this.saldo,
                 pagoInicial = this.pagoInicial,
@@ -240,6 +259,7 @@ class CuentaController(
                         periodoCapitalizacion = TipoPeriodo.DIARIO.name
                 ),
                 fechaDesembolso = this.fechaDesembolso,
+                periodoGracia = gracia,
                 numCuotas = this.numCuotas!!.toInt(),
                 cuotas = cuotas
         )

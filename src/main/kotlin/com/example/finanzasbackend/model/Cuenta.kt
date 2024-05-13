@@ -35,7 +35,7 @@ class Cuenta(var lineaCredito: Float) {
         for(credito in creditos){
             if(credito is CreditoValoFuturo && credito.cuota!!.estadoCuota == EstadoCuota.ATRASADA)
                 return true
-            else{
+            else if (credito is CreditoAnualidad){
                 for(cuota in (credito as CreditoAnualidad).cuotas){
                     if(cuota.estadoCuota == EstadoCuota.ATRASADA)
                         return true

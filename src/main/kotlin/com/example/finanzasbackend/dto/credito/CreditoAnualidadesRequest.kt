@@ -14,9 +14,9 @@ data class CreditoAnualidadesRequest(
         val pagoInicial: Float,
         val tasaCompensatoria: TasaRequest,
         val tasaMoratoria: TasaRequest,
-        val fechaDesembolso: LocalDate,
+        val fechaDesembolso: LocalDate = LocalDate.now(),
         val numCuotas:Int,
         val tipoAnualidad:String,
-        val periodoPago:String,
+        val periodoPago:String = TipoPeriodo.MENSUAL.name,
         val gracia:GraciaRequest?
 )

@@ -3,6 +3,8 @@ package com.example.finanzasbackend.model.credito
 import com.example.finanzasbackend.dto.cuota.CuotaResponse
 import com.example.finanzasbackend.model.Orden
 import com.example.finanzasbackend.model.credito.gracia.PeriodoGracia
+import com.example.finanzasbackend.model.credito.gracia.PeriodoGraciaParcial
+import com.example.finanzasbackend.model.credito.gracia.PeriodoGraciaTotal
 import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteres
 import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresEfectiva
 import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresNominal
@@ -40,22 +42,25 @@ class CreditoAnualidad:Credito {
         val tepMoratoria:TasaInteresEfectiva
 
         if(tasaCompensatoria is TasaInteresNominal)
-            tepCompemsatoria = TasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
+            tepCompemsatoria = tasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
         else
-            tepCompemsatoria = TasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
+            tepCompemsatoria = tasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
 
         if(tasaMoratoria is TasaInteresNominal)
-            tepMoratoria = TasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
+            tepMoratoria = tasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
         else
-            tepMoratoria = TasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
+            tepMoratoria = tasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
 
-        if(tipoAnualidad == TipoAnualidad.VENCIDA)
+        if(this.periodoGracia==null)
             calcularCuotasAnualidadVencida(tepCompemsatoria,tepMoratoria)
+        else if(this.periodoGracia is PeriodoGraciaTotal)
+            calcularCuotasAnualidadVencidaGraciaTotal(tepCompemsatoria,tepMoratoria)
         else
-            calcularCuotasAnualidadAdelantada()
+            calcularCuotasAnualidadVencidaGraciaParcial(tepCompemsatoria,tepMoratoria)
+
         this.consumo!!.asignarToCredito(this)
     }
-    private fun TasaNominalATasaEfectivaPeriodoPago(tasaNominal:TasaInteresNominal):TasaInteresEfectiva{
+    private fun tasaNominalATasaEfectivaPeriodoPago(tasaNominal:TasaInteresNominal):TasaInteresEfectiva{
         val m:Double = tasaNominal.periodo.dias/tasaNominal.periodoCapitalizacion!!.dias.toDouble()
         val n:Double = periodoPago!!.dias/tasaNominal.periodoCapitalizacion!!.dias.toDouble()
         val tasaEfectiva:Double = (Math.pow((1+tasaNominal.tasa/m),n) - 1)*100
@@ -64,7 +69,7 @@ class CreditoAnualidad:Credito {
                 periodo = periodoPago!!
         )
     }
-    private fun TasaEfectivaATasaEfectivaPeriodoPago(tasaEfectiva:TasaInteresEfectiva):TasaInteresEfectiva{
+    private fun tasaEfectivaATasaEfectivaPeriodoPago(tasaEfectiva:TasaInteresEfectiva):TasaInteresEfectiva{
         val n2:Double = periodoPago!!.dias.toDouble()
         val n1:Double = tasaEfectiva.periodo.dias.toDouble()
         val tasaEfectiva2 = Math.pow((1+tasaEfectiva.tasa).toDouble(),(n2/n1))
@@ -96,9 +101,78 @@ class CreditoAnualidad:Credito {
             agregarCuota(cuota)
         }
     }
-    private fun calcularCuotasAnualidadAdelantada(){
+    private fun calcularCuotasAnualidadVencidaGraciaTotal(tepCompensatoria:TasaInteresEfectiva,tepMoratoria:TasaInteresEfectiva){
+        val i:Double = (tasaCompensatoria.tasa/100f).toDouble()
+        val n:Double = numCuotas!!.toDouble()
+        val diasGracia = periodoGracia!!.numCuotas*periodoPago!!.dias
+        val saldoPendiente = (saldo-pagoInicial)*Math.pow((1+i),(diasGracia)/tepCompensatoria.periodo.dias.toDouble())
+        this.periodoGracia!!.saldoPendiente = saldoPendiente.toFloat()
 
+        val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        for (index in 1..n.toInt()){
+            //LLevamos la anualidad a valor presente
+            val diasTrasladar:Int = index*periodoPago!!.dias
+            val diasTEP:Int = tasaCompensatoria.periodo.dias
+            val amortizacion = anualidad/Math.pow((1+i),diasTrasladar/diasTEP.toDouble())
+
+            val cuota:Cuota = Cuota(
+                    fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()+diasGracia),
+                    monto = anualidad.toFloat(),
+                    interes = (anualidad-amortizacion).toFloat(),
+                    amortizacion = amortizacion.toFloat(),
+                    numeroCuota = index
+            )
+            cuota.asignarToCredito(this)
+            agregarCuota(cuota)
+        }
     }
+    private fun calcularCuotasAnualidadVencidaGraciaParcial(tepCompensatoria:TasaInteresEfectiva,tepMoratoria:TasaInteresEfectiva){
+        val i:Double = (tasaCompensatoria.tasa/100f).toDouble()
+        val n:Double = numCuotas!!.toDouble()
+        val diasGracia = periodoGracia!!.numCuotas*periodoPago!!.dias
+        val saldoPendiente = saldo-pagoInicial
+        this.periodoGracia!!.saldoPendiente = saldoPendiente.toFloat()
+
+        //Periodo de gracia parcial cuotas
+        val tiempoGracia = periodoPago!!.dias
+        val periodoTasa  = tasaCompensatoria.periodo.dias
+        val valorFuturoPeriodo = saldoPendiente*Math.pow((1+i),(tiempoGracia/periodoTasa.toDouble()))
+        val interesGraciaPeriodo = valorFuturoPeriodo-saldoPendiente
+
+        for ( index in 1..periodoGracia!!.numCuotas) {
+            val diasTrasladar:Int = index*periodoPago!!.dias
+
+            val cuota: Cuota = Cuota(
+                    fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()),
+                    monto = interesGraciaPeriodo.toFloat(),
+                    interes = interesGraciaPeriodo.toFloat(),
+                    amortizacion = 0f,
+                    numeroCuota = index
+                    )
+            cuota.asignarToCredito(this)
+            agregarCuota(cuota)
+        }
+                //Calculo de cuotas vencidas
+        val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        for (index in 1..n.toInt()){
+            //LLevamos la anualidad a valor presente
+            val diasTrasladar:Int = index*periodoPago!!.dias
+            val diasTEP:Int = tasaCompensatoria.periodo.dias
+            val amortizacion = anualidad/Math.pow((1+i),diasTrasladar/diasTEP.toDouble())
+
+            val cuota:Cuota = Cuota(
+                    fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()+diasGracia),
+                    monto = anualidad.toFloat(),
+                    interes = (anualidad-amortizacion).toFloat(),
+                    amortizacion = amortizacion.toFloat(),
+                    numeroCuota = index+periodoGracia!!.numCuotas
+            )
+            cuota.asignarToCredito(this)
+            agregarCuota(cuota)
+        }
+    }
+
+
     fun agregarCuota(cuota:Cuota){
         cuotas.add(cuota)
     }
