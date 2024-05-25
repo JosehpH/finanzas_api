@@ -1,10 +1,12 @@
 package com.example.finanzasbackend.model.credito
 
 import jakarta.persistence.*
+import lombok.Data
 import java.time.LocalDate
 import java.util.Date
 
 @Entity
+@Data
 class Cuota {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,9 +21,9 @@ class Cuota {
     var fechaPago:LocalDate? = null
     var metodoPago:String = ""
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    /*@ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "credito_id")
-    var credito:Credito?=null
+    var credito:Credito?=null*/
 
     @Enumerated(EnumType.STRING)
     var estadoCuota:EstadoCuota? = EstadoCuota.PENDIENTE
@@ -39,7 +41,7 @@ class Cuota {
         this.estadoCuota = EstadoCuota.PAGADA
         this.fechaPago = LocalDate.now()
     }
-    fun asignarToCredito(credito:Credito){
-        this.credito = credito
-    }
+//    fun asignarToCredito(credito:Credito){
+//        this.credito = credito
+//    }
 }

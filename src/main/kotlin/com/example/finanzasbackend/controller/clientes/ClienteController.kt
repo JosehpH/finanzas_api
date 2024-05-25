@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -51,7 +52,28 @@ class ClienteController(
         return ResponseEntity(cliente.toAperturarCuentaResponse(),HttpStatus.OK)
     }
 
-    private fun Cliente.toResponse() =
+    @Operation(summary = "Busca a los clientes al ingresar una palabra")
+    @GetMapping("/search")
+    fun findByKeyword(@RequestParam keyword:String):ResponseEntity<List<ClienteResponse>>{
+        val response = clienteService.findByKeyword(keyword).map { it.toResponse() }
+        return ResponseEntity(response,HttpStatus.OK)
+    }
+
+    @Operation(summary = "Busca a los clientes al ingresar el DNI")
+    @GetMapping("/search-by-dni")
+    fun findByDni(@RequestParam dni:String):ResponseEntity<ClienteResponse>{
+        val response = clienteService.getByDni(dni)
+        return ResponseEntity(response.toResponse(),HttpStatus.OK)
+    }
+
+    @Operation(summary = "Busca a los clientes por Id")
+    @GetMapping("/{clientId}")
+    fun findById(@PathVariable clientId:Long):ResponseEntity<ClienteResponse>{
+        val response =clienteService.getById(clientId);
+        return ResponseEntity(response.toResponse(),HttpStatus.OK)
+    }
+
+    private fun Cliente.toResponse():ClienteResponse =
             ClienteResponse(
                     id = this.id,
                     nombres = this.nombres,
@@ -60,7 +82,8 @@ class ClienteController(
                     dni = this.dni,
                     email = this.email,
                     telefono = this.telefono,
-                    photo = this.photo
+                    photo = this.photo,
+                    cuenta = cuenta?.toResponse()
             )
     private fun ClienteRequest.toEntity():Cliente=
             Cliente(
@@ -90,5 +113,10 @@ class ClienteController(
                             id=this.cuenta!!.id,
                             limiteCrediticio = this.cuenta!!.lineaCredito
                     )
+            )
+    private fun Cuenta.toResponse():CuentaResponse=
+            CuentaResponse(
+                    id=this.id  ,
+                    limiteCrediticio = this.lineaCredito
             )
 }

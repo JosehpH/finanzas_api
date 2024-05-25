@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.filter.CorsFilter
 
 @Configuration
 @EnableWebSecurity
@@ -28,18 +29,6 @@ class SecurityConfiguration(
             ): DefaultSecurityFilterChain =
             http
                     .csrf { it.disable() }
-                    .cors {
-                        it
-                                .configurationSource {
-                                    var cors = CorsConfiguration();
-                                    cors.allowedOrigins = listOf("*");
-                                    cors.allowedMethods = listOf("*");
-                                    cors.allowedHeaders = listOf("*");
-                                    cors.allowCredentials = true;
-                                    cors.maxAge = 3600L;
-                                    return@configurationSource cors;
-                                }
-                    }
                     .authorizeHttpRequests {
                         it
                                 .requestMatchers("/api/auth", "api/auth/refrsh", "/error")
@@ -59,14 +48,14 @@ class SecurityConfiguration(
                     .build()
 
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        configuration.allowedOrigins = mutableListOf("*")
-        configuration.allowedMethods = mutableListOf("*")
-        configuration.allowedHeaders = mutableListOf("*")
+    fun corsFilter(): CorsFilter {
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
-        return source
+        val config = CorsConfiguration()
+        config.allowedOrigins = listOf("*")
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("*")
+        source.registerCorsConfiguration("/**", config)
+        return CorsFilter(source)
     }
 
 }

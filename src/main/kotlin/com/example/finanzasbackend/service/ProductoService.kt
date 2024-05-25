@@ -12,7 +12,7 @@ class ProductoService(
         private val productoRepository: ProductoRepository,
         private val negocioRepository: NegocioRepository
 ) {
-    fun getAllProductosByNegocio():List<Producto> = productoRepository.findAll()
+    fun getAllProductosByNegocio():List<Producto> = productoRepository.findAllByActivoIsTrue()
 
     fun getProductoById(productoId:Long):Producto{
         val found = productoRepository.findById(productoId);
@@ -45,9 +45,12 @@ class ProductoService(
         val found = productoRepository.existsById(productoId)
         if(!found) throw BadRequestException("El producto con el id asociado no se ha encontrado")
 
-        productoRepository.deleteById(productoId)
-
+        val product = productoRepository.findById(productoId).get()
+        product.activo=false
+        productoRepository.save(product)
     }
+
+    fun findByKeyword(keyword:String) = productoRepository.findByKeyword(keyword)
 
 
 }

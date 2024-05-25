@@ -1,8 +1,10 @@
 package com.example.finanzasbackend.model
 
 import jakarta.persistence.*
+import lombok.Data
 
 @Entity(name = "clientes")
+@Data
 class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

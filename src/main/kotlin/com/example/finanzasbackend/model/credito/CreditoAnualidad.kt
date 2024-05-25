@@ -28,7 +28,8 @@ class CreditoAnualidad:Credito {
     @OneToOne(cascade = [CascadeType.ALL])
     var periodoGracia: PeriodoGracia? = null
 
-    @OneToMany(mappedBy = "credito",cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+    @OneToMany(cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+    @JoinColumn(name = "credito_id")
     var cuotas:MutableList<Cuota> = mutableListOf()
 
     constructor(consumo:Orden, tasaCompensatoria: TasaInteres, tasaMoratoria: TasaInteres, pagoInicial: Float, fechaDesembolso: LocalDate, numCuotas: Int?, periodoPago: TipoPeriodo?, periodoGracia: PeriodoGracia?) : super(consumo, tasaCompensatoria, tasaMoratoria, pagoInicial,fechaDesembolso) {
@@ -82,22 +83,21 @@ class CreditoAnualidad:Credito {
         val saldoPendiente = saldo-pagoInicial
         val i:Double = (tasaCompensatoria.tasa/100f).toDouble()
         val n:Double = numCuotas!!.toDouble()
-        val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        var anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        anualidad = roundTo2Decimals(anualidad.toFloat()).toDouble()
 
         for (index in 1..n.toInt()){
             //LLevamos la anualidad a valor presente
             val diasTrasladar:Int = index*periodoPago!!.dias
             val diasTEP:Int = tasaCompensatoria.periodo.dias
-            val amortizacion = anualidad/Math.pow((1+i),diasTrasladar/diasTEP.toDouble())
-
+            val amortizacion:Double = anualidad/Math.pow((1+i),diasTrasladar/diasTEP.toDouble())
             val cuota:Cuota = Cuota(
                     fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()),
-                    monto = anualidad.toFloat(),
-                    interes = (anualidad-amortizacion).toFloat(),
-                    amortizacion = amortizacion.toFloat(),
+                    monto = roundTo2Decimals(anualidad.toFloat()),
+                    interes = roundTo2Decimals((anualidad-amortizacion).toFloat()),
+                    amortizacion =roundTo2Decimals(amortizacion.toFloat()),
                     numeroCuota = index
             )
-            cuota.asignarToCredito(this)
             agregarCuota(cuota)
         }
     }
@@ -117,12 +117,11 @@ class CreditoAnualidad:Credito {
 
             val cuota:Cuota = Cuota(
                     fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()+diasGracia),
-                    monto = anualidad.toFloat(),
-                    interes = (anualidad-amortizacion).toFloat(),
-                    amortizacion = amortizacion.toFloat(),
+                    monto = roundTo2Decimals(anualidad.toFloat()),
+                    interes = roundTo2Decimals((anualidad-amortizacion).toFloat()),
+                    amortizacion = roundTo2Decimals(amortizacion.toFloat()),
                     numeroCuota = index
             )
-            cuota.asignarToCredito(this)
             agregarCuota(cuota)
         }
     }
@@ -144,12 +143,11 @@ class CreditoAnualidad:Credito {
 
             val cuota: Cuota = Cuota(
                     fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()),
-                    monto = interesGraciaPeriodo.toFloat(),
-                    interes = interesGraciaPeriodo.toFloat(),
+                    monto = roundTo2Decimals(interesGraciaPeriodo.toFloat()),
+                    interes = roundTo2Decimals(interesGraciaPeriodo.toFloat()),
                     amortizacion = 0f,
                     numeroCuota = index
                     )
-            cuota.asignarToCredito(this)
             agregarCuota(cuota)
         }
                 //Calculo de cuotas vencidas
@@ -162,12 +160,11 @@ class CreditoAnualidad:Credito {
 
             val cuota:Cuota = Cuota(
                     fechaVencimiento = fechaDesembolso.plusDays(diasTrasladar.toLong()+diasGracia),
-                    monto = anualidad.toFloat(),
-                    interes = (anualidad-amortizacion).toFloat(),
-                    amortizacion = amortizacion.toFloat(),
+                    monto = roundTo2Decimals(anualidad.toFloat()),
+                    interes = roundTo2Decimals((anualidad-amortizacion).toFloat()),
+                    amortizacion = roundTo2Decimals(amortizacion.toFloat()),
                     numeroCuota = index+periodoGracia!!.numCuotas
             )
-            cuota.asignarToCredito(this)
             agregarCuota(cuota)
         }
     }
@@ -175,5 +172,6 @@ class CreditoAnualidad:Credito {
 
     fun agregarCuota(cuota:Cuota){
         cuotas.add(cuota)
+        //cuota.asignarToCredito(this)
     }
 }

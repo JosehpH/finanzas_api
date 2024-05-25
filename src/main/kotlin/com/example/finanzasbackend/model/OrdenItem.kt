@@ -1,8 +1,11 @@
 package com.example.finanzasbackend.model
 
 import jakarta.persistence.*
+import lombok.Data
+import kotlin.math.roundToInt
 
 @Entity
+@Data
 class OrdenItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,9 +28,12 @@ class OrdenItem {
         this.precio = product.precio
     }
     fun calcularSubtotal():Float{
-        return precio * cantidad
+        return roundTo2Decimals(precio * cantidad)
     }
     fun addToOrden(orden:Orden){
         this.orden = orden
+    }
+    fun roundTo2Decimals(n:Float):Float{
+        return ((n*100.0).roundToInt()/100.0).toFloat()
     }
 }

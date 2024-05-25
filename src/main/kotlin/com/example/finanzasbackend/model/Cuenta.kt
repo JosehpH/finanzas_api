@@ -4,9 +4,12 @@ import com.example.finanzasbackend.model.credito.Credito
 import com.example.finanzasbackend.model.credito.CreditoAnualidad
 import com.example.finanzasbackend.model.credito.CreditoValoFuturo
 import com.example.finanzasbackend.model.credito.EstadoCuota
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import lombok.Data
 
 @Entity(name = "cuentas_credito")
+@Data
 class Cuenta(var lineaCredito: Float) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +24,7 @@ class Cuenta(var lineaCredito: Float) {
 
     fun agregarCredito(credito:Credito){
         creditos.add(credito)
+        credito.asignarToCuenta(this)
     }
     fun recuperarLineaCredito(amortizacion:Float){
         this.lineaCredito+=amortizacion;

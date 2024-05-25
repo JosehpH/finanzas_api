@@ -1,12 +1,11 @@
-package com.example.finanzasbackend.controller.cuenta
+package com.example.finanzasbackend.controller;
 
 import com.example.finanzasbackend.dto.credito.*
-import com.example.finanzasbackend.dto.cuenta.*
+import com.example.finanzasbackend.dto.cuenta.CuentaResponse
 import com.example.finanzasbackend.dto.cuota.CuotaResponse
 import com.example.finanzasbackend.dto.gracia.GraciaResponse
 import com.example.finanzasbackend.dto.tasa.TasaRequest
 import com.example.finanzasbackend.model.Cuenta
-import com.example.finanzasbackend.model.credito.Credito
 import com.example.finanzasbackend.model.credito.CreditoAnualidad
 import com.example.finanzasbackend.model.credito.CreditoValoFuturo
 import com.example.finanzasbackend.model.credito.gracia.PeriodoGracia
@@ -14,55 +13,35 @@ import com.example.finanzasbackend.model.credito.gracia.PeriodoGraciaParcial
 import com.example.finanzasbackend.model.credito.gracia.PeriodoGraciaTotal
 import com.example.finanzasbackend.model.credito.gracia.TipoPeriodoGracia
 import com.example.finanzasbackend.model.credito.tasaInteres.*
-import com.example.finanzasbackend.service.CuentaService
+import com.example.finanzasbackend.service.CreditoService
 import com.example.finanzasbackend.service.OrdenService
-import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.Table;
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/cuentas")
-@Tag(name = "Cuenta", description = "Controlador de cuentas")
-class CuentaController(
-        private val cuentaService: CuentaService,
+@RequestMapping("api/creditos")
+@Tag(name = "Creditos", description = "Controller para previsualizar los creditos antes de confirmar si estará ligado a la cuenta")
+class CreditoController(
+        private val creditoService: CreditoService,
         private val ordenService: OrdenService
 ) {
-    companion object{
-        private val logger: Logger = LoggerFactory.getLogger(CuentaController::class.java)
-    }
-    @Operation(summary = "Solicitar credito de estilo valor futuro a tasas nominales o efectivas")
-    @PostMapping("/{clienteId}/solicitar-credito-valor-futuro")
-    fun solicitarCreditoValorFuturo(@PathVariable clienteId: Long, @RequestBody request: CreditoValorFuturoRequest): ResponseEntity<CreditoValorFuturoResponse> {
-        val credito = cuentaService.solicitarCredito(clienteId, request.toCredito())
-        return ResponseEntity((credito as CreditoValoFuturo).toCreditoValorFuturoResponse(), HttpStatus.OK)
-
+    @PostMapping("/valor-futuro")
+    fun prevCreditoValorFuturo(@RequestBody request: CreditoValorFuturoRequest): ResponseEntity<CreditoValorFuturoResponse> {
+        val response = creditoService.calcularCuotasValorFuturo(request.toCredito());
+        return ResponseEntity(response.toCreditoValorFuturoResponse(),HttpStatus.OK);
     }
 
-    @Operation(summary = "Solicitar credito de estilo anualidades con o sin periodo de gracia")
-    @PostMapping("/{clienteId}/solicitar-credito-anualidades")
-    fun solicitarCreditoAnualidades(@PathVariable clienteId: Long, @RequestBody request: CreditoAnualidadesRequest): ResponseEntity<CreditoAnualidadesResponse> {
-        val credito = cuentaService.solicitarCredito(clienteId, request.toCredito())
-        return ResponseEntity((credito as CreditoAnualidad).toResponse(), HttpStatus.OK)
-
+    @PostMapping("/anualidades")
+    fun prevCreditoAnualidad(@RequestBody request: CreditoAnualidadesRequest): ResponseEntity<CreditoAnualidadesResponse> {
+        val response = creditoService.calcularCuotasAnualidad(request.toCredito());
+        return ResponseEntity(response.toResponse(),HttpStatus.OK);
     }
-
-    @Operation(summary = "Obtener cuenta de un cliente con sus respectivos creditos")
-    @GetMapping("/{clienteId}")
-    fun getCuentaByClienteId(@PathVariable clienteId: Long): ResponseEntity<CuentaResponse> {
-        val cuenta = cuentaService.getCuentaByClienteId(clienteId)
-                ?: throw Exception("El cliente no tiene una cuenta aperturada")
-        return ResponseEntity(cuenta.toCuentaResponse(), HttpStatus.OK)
-    }
-
 
     private fun CreditoValorFuturoRequest.toCredito(): CreditoValoFuturo {
         val tasac: TasaInteres
@@ -147,8 +126,9 @@ class CuentaController(
                 it.toCreditoValorFuturoResponse()
             else
                 (it as CreditoAnualidad).toResponse()
+
+
         }
-        logger.info("Cantidad de creditos response: ${this.creditos.size}")
         return CuentaResponse(
                 id = this.id,
                 limiteCrediticio = this.lineaCredito,
@@ -235,9 +215,9 @@ class CuentaController(
             gracia = GraciaResponse(
                     id = this.periodoGracia!!.id,
                     numCuotas = this.periodoGracia!!.numCuotas.toLong(),
-                    tipo =tipo,
+                    tipo = tipo,
                     saldoRestante = this.periodoGracia!!.saldoPendiente
-                    )
+            )
         }
         return CreditoAnualidadesResponse(
                 id = this.id,

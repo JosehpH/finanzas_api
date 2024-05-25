@@ -1,8 +1,10 @@
 package com.example.finanzasbackend.model
 
 import jakarta.persistence.*
+import lombok.Data
 
 @Entity
+@Data
 class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +22,8 @@ class Producto {
     @ManyToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
     @JoinColumn(name="negocio_id")
     var negocio:Negocio?=null
+
+    var activo:Boolean = true
 
     constructor(nombre: String, descripcion: String, imagenes: List<String>, precio: Float) {
         this.nombre = nombre

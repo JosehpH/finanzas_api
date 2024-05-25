@@ -3,10 +3,12 @@ package com.example.finanzasbackend.model
 import com.example.finanzasbackend.valueobjects.Role
 import jakarta.persistence.*
 import lombok.AllArgsConstructor
+import lombok.Data
 import java.util.UUID
 
 @Entity(name = "negocios")
 @AllArgsConstructor
+@Data
 class Negocio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

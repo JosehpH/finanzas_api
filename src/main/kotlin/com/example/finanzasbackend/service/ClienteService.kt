@@ -26,6 +26,13 @@ class ClienteService(
         return negocio.clientes
     }
 
+    fun getById(id:Long):Cliente{
+        val found = clienteRepository.findById(id);
+        if(found.isEmpty)
+            throw BadRequestException("El usuario con id: $id no existe")
+        return found.get()
+    }
+
     fun registrarCliente(cliente:Cliente):Cliente?{
         val negocioEmail =  SecurityContextHolder.getContext().authentication.name
         val foundNegocio:Optional<Negocio> = negocioRepository.findByEmail(negocioEmail)
@@ -50,6 +57,12 @@ class ClienteService(
         }
         throw BadRequestException("Cliente no encontrado del negocio ${negocio.nombre}")
     }
-
+    fun findByKeyword(keyword:String) = clienteRepository.findByKeyword(keyword)
+    fun getByDni(dni:String):Cliente{
+        val found = clienteRepository.findByDni(dni);
+        if(found.isEmpty)
+            throw BadRequestException("El usuario con dni: $dni no existe")
+        return found.get()
+    }
 
 }

@@ -5,9 +5,12 @@ import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteres
 import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresEfectiva
 import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresNominal
 import com.example.finanzasbackend.model.credito.tasaInteres.TipoPeriodo
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import lombok.Data
 import java.time.LocalDate
 import java.util.Date
+import kotlin.math.roundToInt
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -51,5 +54,8 @@ abstract class Credito {
     abstract fun calcularCuotas()
     fun asignarToCuenta(cuenta:Cuenta){
         this.cuenta = cuenta
+    }
+     fun roundTo2Decimals(n:Float):Float{
+        return ((n*100.0).roundToInt()/100.0).toFloat()
     }
 }
