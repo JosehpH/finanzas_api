@@ -52,6 +52,10 @@ abstract class Credito {
         this.fechaDesembolso = fechaDesembolso
     }
     abstract fun calcularCuotas()
+    abstract fun calcularMora()
+
+    abstract fun estadoCredito():EstadoCuota
+
     fun asignarToCuenta(cuenta:Cuenta){
         this.cuenta = cuenta
     }

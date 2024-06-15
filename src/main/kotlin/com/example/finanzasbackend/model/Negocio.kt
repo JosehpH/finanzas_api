@@ -1,5 +1,8 @@
 package com.example.finanzasbackend.model
 
+import com.example.finanzasbackend.model.credito.CreditoAnualidad
+import com.example.finanzasbackend.model.credito.CreditoValoFuturo
+import com.example.finanzasbackend.model.credito.EstadoCuota
 import com.example.finanzasbackend.valueobjects.Role
 import jakarta.persistence.*
 import lombok.AllArgsConstructor
@@ -45,5 +48,46 @@ class Negocio {
         productos.add(producto)
     }
 
+    fun getNumeroClientesActivos():Int{
+        return clientes.size
+    }
+    fun getNumeroCreditosPagoPendiente():Int{
+        var cant = 0
+        for( cliente in clientes){
+            if(cliente.cuenta!=null)
+                for(credito in cliente.cuenta!!.creditos){
+                    if(credito is CreditoValoFuturo)
+                        cant+= if(credito.cuota!!.estadoCuota==EstadoCuota.PENDIENTE) 1 else 0
+                    if(credito is CreditoAnualidad)
+                        (credito as CreditoAnualidad).cuotas.forEach {it->
+                            cant+= if(it.estadoCuota==EstadoCuota.PENDIENTE) 1 else 0
+                        }
+                }
+        }
+        return cant;
+    }
+    fun getTotalCreditoOtorgados():Int{
+        var cant = 0;
+        for( cliente in clientes){
+            if(cliente.cuenta!=null)
+                cant+=(cliente.cuenta!!.creditos.size)
+        }
+        return cant;
+    }
+    fun getNumeroCreditosPagoAtrasado():Int{
+        var cant = 0
+        for( cliente in clientes){
+            if(cliente.cuenta!=null)
+                for(credito in cliente.cuenta!!.creditos){
+                    if(credito is CreditoValoFuturo)
+                        cant+= if(credito.cuota!!.estadoCuota==EstadoCuota.ATRASADA) 1 else 0
+                    if(credito is CreditoAnualidad)
+                        (credito as CreditoAnualidad).cuotas.forEach {it->
+                            cant+= if(it.estadoCuota==EstadoCuota.ATRASADA) 1 else 0
+                        }
+                }
+        }
+        return cant;
+    }
 }
 

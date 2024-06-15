@@ -61,10 +61,27 @@ class CreditoAnualidad:Credito {
 
         this.consumo!!.asignarToCredito(this)
     }
+
+    override fun calcularMora() {
+        println("Anualidad Mora")
+    }
+
+    override fun estadoCredito(): EstadoCuota {
+        val pagosAtrasados:Boolean =  cuotas.any{ it.estadoCuota == EstadoCuota.ATRASADA}
+        val cuotasPagadas:Boolean = cuotas.all { it.estadoCuota==EstadoCuota.PAGADA }
+        if(pagosAtrasados) return EstadoCuota.ATRASADA
+        else if(cuotasPagadas) return EstadoCuota.PAGADA
+        else return EstadoCuota.PENDIENTE
+    }
+
     private fun tasaNominalATasaEfectivaPeriodoPago(tasaNominal:TasaInteresNominal):TasaInteresEfectiva{
+
         val m:Double = tasaNominal.periodo.dias/tasaNominal.periodoCapitalizacion!!.dias.toDouble()
+
         val n:Double = periodoPago!!.dias/tasaNominal.periodoCapitalizacion!!.dias.toDouble()
-        val tasaEfectiva:Double = (Math.pow((1+tasaNominal.tasa/m),n) - 1)*100
+
+        val tasaEfectiva:Double = (Math.pow((1+tasaNominal.tasa/(100*m)),n) - 1)*100
+
         return TasaInteresEfectiva(
                 tasa = tasaEfectiva.toFloat(),
                 periodo = periodoPago!!
@@ -81,9 +98,15 @@ class CreditoAnualidad:Credito {
     }
     private fun calcularCuotasAnualidadVencida(tepCompensatoria:TasaInteresEfectiva,tepMoratoria:TasaInteresEfectiva){
         val saldoPendiente = saldo-pagoInicial
-        val i:Double = (tasaCompensatoria.tasa/100f).toDouble()
+        val i:Double = (tepCompensatoria.tasa/100f).toDouble()
         val n:Double = numCuotas!!.toDouble()
-        var anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        //var anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
+        var anualidad:Double = ((saldoPendiente*i)/(1-Math.pow((1+i),-n)))
+        println("Anualidad: $anualidad")
+        println("Saldo pendiente: $saldoPendiente")
+        println("i: $i")
+        println("n: $n")
+
         anualidad = roundTo2Decimals(anualidad.toFloat()).toDouble()
 
         for (index in 1..n.toInt()){

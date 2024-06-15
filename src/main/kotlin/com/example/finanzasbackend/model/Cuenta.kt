@@ -37,14 +37,8 @@ class Cuenta(var lineaCredito: Float) {
     }
     fun hayPagosAtrasados():Boolean{
         for(credito in creditos){
-            if(credito is CreditoValoFuturo && credito.cuota!!.estadoCuota == EstadoCuota.ATRASADA)
+            if(credito.estadoCredito() == EstadoCuota.ATRASADA)
                 return true
-            else if (credito is CreditoAnualidad){
-                for(cuota in (credito as CreditoAnualidad).cuotas){
-                    if(cuota.estadoCuota == EstadoCuota.ATRASADA)
-                        return true
-                }
-            }
         }
         return false
     }

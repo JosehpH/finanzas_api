@@ -1,6 +1,7 @@
 package com.example.finanzasbackend.repository
 
 import com.example.finanzasbackend.model.Cliente
+import com.example.finanzasbackend.model.Negocio
 import com.example.finanzasbackend.model.Producto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -17,4 +18,6 @@ interface ProductoRepository : JpaRepository<Producto,Long>{
             "r.activo = true "
     )
     fun findByKeyword(keyword:String):List<Producto>
+
+    fun findByNegocioAndActivoIsTrue(negocio:Negocio):List<Producto>
 }

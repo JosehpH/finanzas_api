@@ -12,7 +12,11 @@ class ProductoService(
         private val productoRepository: ProductoRepository,
         private val negocioRepository: NegocioRepository
 ) {
-    fun getAllProductosByNegocio():List<Producto> = productoRepository.findAllByActivoIsTrue()
+    fun getAllProductosByNegocio():List<Producto> {
+        val email = SecurityContextHolder.getContext().authentication.name
+        val negocio = negocioRepository.findByEmail(email).get()
+        return productoRepository.findByNegocioAndActivoIsTrue(negocio)
+    }
 
     fun getProductoById(productoId:Long):Producto{
         val found = productoRepository.findById(productoId);

@@ -1,11 +1,13 @@
-package com.example.finanzasbackend.controller;
+package com.example.finanzasbackend.controller.credito;
 
+import com.example.finanzasbackend.dto.clientes.ClienteResponse
 import com.example.finanzasbackend.dto.credito.*
 import com.example.finanzasbackend.dto.cuenta.CuentaResponse
 import com.example.finanzasbackend.dto.cuota.CuotaResponse
 import com.example.finanzasbackend.dto.gracia.GraciaResponse
 import com.example.finanzasbackend.dto.tasa.TasaRequest
 import com.example.finanzasbackend.model.Cuenta
+import com.example.finanzasbackend.model.credito.Credito
 import com.example.finanzasbackend.model.credito.CreditoAnualidad
 import com.example.finanzasbackend.model.credito.CreditoValoFuturo
 import com.example.finanzasbackend.model.credito.gracia.PeriodoGracia
@@ -16,13 +18,10 @@ import com.example.finanzasbackend.model.credito.tasaInteres.*
 import com.example.finanzasbackend.service.CreditoService
 import com.example.finanzasbackend.service.OrdenService
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.Table;
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("api/creditos")
@@ -42,6 +41,62 @@ class CreditoController(
         val response = creditoService.calcularCuotasAnualidad(request.toCredito());
         return ResponseEntity(response.toResponse(),HttpStatus.OK);
     }
+
+    @GetMapping("/")
+    fun getAll(): List<CreditoWithClienteResponse?> {
+        val lista = creditoService.getAllCreditos()
+        return lista.map { it.toResponse() };
+    }
+
+    @GetMapping("/{id}")
+    fun getById(@PathVariable id:Long):ResponseEntity<CreditoResponse?> {
+        val detallesCredito = creditoService.getById(id)
+        var creditoResponse:CreditoResponse?=null
+        when(detallesCredito){
+            is CreditoValoFuturo -> creditoResponse=detallesCredito.toCreditoValorFuturoResponse()
+            is CreditoAnualidad -> creditoResponse = detallesCredito.toResponse()
+        }
+        return ResponseEntity(creditoResponse,HttpStatus.OK)
+    }
+
+
+    @GetMapping("/search")
+    fun getByDni(@RequestParam dni: String): List<CreditoWithClienteResponse?> {
+        val lista = creditoService.getByDni(dni)
+        return lista.map {
+            it.toResponse()
+        }
+    }
+    @GetMapping("/filter")
+    fun getTest(@RequestParam dni: String?, @RequestParam fechaInicio:LocalDate?, @RequestParam fechaFinal:LocalDate?):ResponseEntity<List<CreditoWithClienteResponse>>{
+        val lista = creditoService.filter(dni,fechaInicio,fechaFinal)
+        val response = lista.map { it.toResponse() }
+        return ResponseEntity(response,HttpStatus.OK)
+    }
+
+
+    private fun Credito.toResponse(): CreditoWithClienteResponse =
+            CreditoWithClienteResponse(
+                    creditoId = this.id,
+                    tipoCredito = if (this is CreditoValoFuturo) "VALOR FUTURO" else "ESTILO ANUALIDADES",
+                    cliente = ClienteResponse(
+                            id = this.cuenta!!.cliente!!.id,
+                            nombres = this.cuenta!!.cliente!!.nombres,
+                            email = this.cuenta!!.cliente!!.email,
+                            apellidoPaterno = this.cuenta!!.cliente!!.apellidoPaterno,
+                            apellidoMaterno = this.cuenta!!.cliente!!.apellidoMaterno,
+                            dni = this.cuenta!!.cliente!!.dni,
+                            telefono = this.cuenta!!.cliente!!.telefono,
+                            cuenta = null,
+                            photo = null
+                    ),
+                    estadoCredito = this.estadoCredito().toString(),
+                    saldo = this.saldo,
+                    pagoInicial = this.pagoInicial,
+                    saldoRestante = this.saldo - this.pagoInicial,
+                    fechaDesembolso = this.fechaDesembolso,
+                    consumoId = this.consumo!!.id
+            )
 
     private fun CreditoValorFuturoRequest.toCredito(): CreditoValoFuturo {
         val tasac: TasaInteres

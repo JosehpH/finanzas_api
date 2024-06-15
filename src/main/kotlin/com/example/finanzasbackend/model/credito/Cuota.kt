@@ -1,5 +1,6 @@
 package com.example.finanzasbackend.model.credito
 
+import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresEfectiva
 import jakarta.persistence.*
 import lombok.Data
 import java.time.LocalDate
@@ -20,7 +21,6 @@ class Cuota {
     var numeroDeCuota:Int = 0
     var fechaPago:LocalDate? = null
     var metodoPago:String = ""
-
     /*@ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "credito_id")
     var credito:Credito?=null*/
@@ -28,7 +28,7 @@ class Cuota {
     @Enumerated(EnumType.STRING)
     var estadoCuota:EstadoCuota? = EstadoCuota.PENDIENTE
 
-    constructor(fechaVencimiento: LocalDate, amortizacion: Float, interes: Float, monto: Float,numeroCuota:Int) {
+    constructor(fechaVencimiento: LocalDate, amortizacion: Float, interes: Float, monto: Float,numeroCuota:Int, tasaCompensatoria:Float?=null, tasaMoratoria:Float?=null) {
         this.fechaVencimiento = fechaVencimiento
         this.amortizacion = amortizacion
         this.interesCompensatorio = interes
