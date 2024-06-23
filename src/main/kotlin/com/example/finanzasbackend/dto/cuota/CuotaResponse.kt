@@ -14,6 +14,7 @@ data class CuotaResponse(
         val monto: Float,
         val fechaPago:LocalDate?,
         val metodoPago:String,
-        val estadoCuota:String?
+        val estadoCuota:String?,
+        val montoPagado:Float?=null
 )
 

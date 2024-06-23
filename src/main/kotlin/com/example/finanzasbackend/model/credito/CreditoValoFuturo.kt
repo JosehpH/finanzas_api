@@ -54,8 +54,42 @@ class CreditoValoFuturo:Credito{
                 monto = valorFuturo,
                 numeroCuota = 1
         )
+        interesAcumulado+=cuota!!.interesCompensatorio
+
         //this.cuota!!.asignarToCredito(this)
         this.consumo!!.asignarToCredito(this)
+    }
+
+    fun cuotaToValorPresente():Cuota{
+        val plazoDiasCredito = calcularDiasEntreFechas(fechaDesembolso, LocalDate.now())
+        var valorFuturo:Float = 0f
+        var saldoRestante = saldo-pagoInicial
+        saldoRestante = roundTo2Decimals(saldoRestante)
+
+        if(tasaCompensatoria is TasaInteresNominal){
+            val capitalizacion = (tasaCompensatoria as TasaInteresNominal).periodoCapitalizacion?.dias
+            val n:Double = (plazoDiasCredito*1.0)/(capitalizacion!!*1.0)
+            val m = tasaCompensatoria.periodo.dias/capitalizacion.toFloat()
+            val tasa = tasaCompensatoria.tasa/100f
+
+            valorFuturo = (saldoRestante*Math.pow((1+tasa/m).toDouble(),n)).toFloat()
+            valorFuturo = roundTo2Decimals(valorFuturo)
+        }
+        else if(tasaCompensatoria is TasaInteresEfectiva){
+            val tasa = tasaCompensatoria.tasa/100f
+            val periodoTasaDias = tasaCompensatoria.periodo.dias
+            valorFuturo = (saldoRestante*Math.pow((1+tasa).toDouble(),(plazoDiasCredito/periodoTasaDias.toFloat()).toDouble())).toFloat()
+            valorFuturo = roundTo2Decimals(valorFuturo)
+        } else {
+            //TODO
+        }
+        return Cuota(
+            fechaVencimiento = LocalDate.now(),
+            amortizacion = saldoRestante,
+            interes = roundTo2Decimals(valorFuturo-saldoRestante),
+            monto = valorFuturo,
+            numeroCuota = 1
+        )
     }
 
     override fun calcularMora() {

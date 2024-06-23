@@ -45,4 +45,11 @@ class Cuenta(var lineaCredito: Float) {
     fun asignarToCliente(cliente:Cliente){
         this.cliente = cliente
     }
+    fun getInteresAcumulado():Float{
+        var sum:Float = 0f
+        for(credito in creditos){
+           sum+=credito.interesAcumulado
+        }
+        return sum
+    }
 }

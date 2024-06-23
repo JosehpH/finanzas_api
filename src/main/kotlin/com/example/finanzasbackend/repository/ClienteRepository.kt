@@ -18,4 +18,6 @@ interface ClienteRepository :JpaRepository<Cliente,Long>{
     )
     fun findByKeyword(keyword:String):List<Cliente>
     fun findByDni(dni:String): Optional<Cliente>
+
+    fun findByDniAndNegocio_Ruc(dni:String,ruc:String):Optional<Cliente>
 }

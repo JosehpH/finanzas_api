@@ -1,10 +1,8 @@
 package com.example.finanzasbackend.model.credito
 
-import com.example.finanzasbackend.model.credito.tasaInteres.TasaInteresEfectiva
 import jakarta.persistence.*
 import lombok.Data
 import java.time.LocalDate
-import java.util.Date
 
 @Entity
 @Data
@@ -19,8 +17,10 @@ class Cuota {
     var interesMoratorio:Float=0f
     var monto:Float = 0f
     var numeroDeCuota:Int = 0
+
     var fechaPago:LocalDate? = null
     var metodoPago:String = ""
+    var montoPagado:Float =0f
     /*@ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "credito_id")
     var credito:Credito?=null*/
@@ -36,10 +36,11 @@ class Cuota {
         this.numeroDeCuota = numeroCuota
     }
 
-    fun pagarCuota(metodoPago:String){
-        this.metodoPago = metodoPago;
+    fun pagarCuota(metodoPago: String, cuotaActual: Float, fechaPago: LocalDate){
+        this.metodoPago = metodoPago
         this.estadoCuota = EstadoCuota.PAGADA
-        this.fechaPago = LocalDate.now()
+        this.fechaPago = fechaPago
+        this.montoPagado = cuotaActual
     }
 //    fun asignarToCredito(credito:Credito){
 //        this.credito = credito

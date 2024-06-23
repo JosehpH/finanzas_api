@@ -12,6 +12,7 @@ import com.example.finanzasbackend.model.credito.tasaInteres.TipoPeriodo
 import jakarta.persistence.*
 import lombok.Data
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Entity
@@ -38,6 +39,24 @@ class CreditoAnualidad:Credito {
         this.periodoGracia = periodoGracia
     }
 
+    fun cuotaToValorPresente(cuota:Cuota):Cuota{
+        var tasaEfectiva:TasaInteresEfectiva
+        var diasTranscurridos:Long = calcularDiasEntreFechas(LocalDate.now(),cuota.fechaVencimiento)
+        when(tasaCompensatoria){
+            is TasaInteresNominal-> tasaEfectiva = tasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
+            else-> tasaEfectiva = tasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
+        }
+        var TED:Double = Math.pow((1+tasaEfectiva.tasa/100*1.0),(1/tasaEfectiva.periodo.dias*1.0)) -1
+        var valorActual:Double = cuota.monto/Math.pow((1.0+TED),diasTranscurridos*1.0)
+        return Cuota(
+            numeroCuota = 1,
+            monto = valorActual.toFloat(),
+            amortizacion = cuota.amortizacion.toFloat(),
+            interes = (valorActual-cuota.amortizacion).toFloat(),
+            fechaVencimiento = LocalDate.now()
+        )
+    }
+
     override fun calcularCuotas() {
         val tepCompemsatoria:TasaInteresEfectiva
         val tepMoratoria:TasaInteresEfectiva
@@ -48,9 +67,9 @@ class CreditoAnualidad:Credito {
             tepCompemsatoria = tasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
 
         if(tasaMoratoria is TasaInteresNominal)
-            tepMoratoria = tasaNominalATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresNominal)
+            tepMoratoria = tasaNominalATasaEfectivaPeriodoPago(tasaMoratoria as TasaInteresNominal)
         else
-            tepMoratoria = tasaEfectivaATasaEfectivaPeriodoPago(tasaCompensatoria as TasaInteresEfectiva)
+            tepMoratoria = tasaEfectivaATasaEfectivaPeriodoPago(tasaMoratoria as TasaInteresEfectiva)
 
         if(this.periodoGracia==null)
             calcularCuotasAnualidadVencida(tepCompemsatoria,tepMoratoria)
@@ -121,6 +140,7 @@ class CreditoAnualidad:Credito {
                     amortizacion =roundTo2Decimals(amortizacion.toFloat()),
                     numeroCuota = index
             )
+            interesAcumulado+=cuota.interesCompensatorio
             agregarCuota(cuota)
         }
     }
@@ -130,9 +150,13 @@ class CreditoAnualidad:Credito {
         val diasGracia = periodoGracia!!.numCuotas*periodoPago!!.dias
         val saldoPendiente = (saldo-pagoInicial)*Math.pow((1+i),(diasGracia)/tepCompensatoria.periodo.dias.toDouble())
         this.periodoGracia!!.saldoPendiente = saldoPendiente.toFloat()
+        interesAcumulado+=(saldoPendiente-(saldo-pagoInicial)).toFloat()
 
-        val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
-        for (index in 1..n.toInt()){
+        val periodosRestantes:Double = n - periodoGracia!!.numCuotas
+
+        val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),periodosRestantes))/(Math.pow((1+i),periodosRestantes)-1).toDouble()
+
+        for (index in 1..periodosRestantes.toInt()){
             //LLevamos la anualidad a valor presente
             val diasTrasladar:Int = index*periodoPago!!.dias
             val diasTEP:Int = tasaCompensatoria.periodo.dias
@@ -143,8 +167,10 @@ class CreditoAnualidad:Credito {
                     monto = roundTo2Decimals(anualidad.toFloat()),
                     interes = roundTo2Decimals((anualidad-amortizacion).toFloat()),
                     amortizacion = roundTo2Decimals(amortizacion.toFloat()),
-                    numeroCuota = index
+                    numeroCuota = index+periodoGracia!!.numCuotas
             )
+            interesAcumulado+=cuota.interesCompensatorio
+
             agregarCuota(cuota)
         }
     }
@@ -171,11 +197,12 @@ class CreditoAnualidad:Credito {
                     amortizacion = 0f,
                     numeroCuota = index
                     )
+            interesAcumulado+=cuota.interesCompensatorio
             agregarCuota(cuota)
         }
                 //Calculo de cuotas vencidas
         val anualidad:Double = saldoPendiente*(i*Math.pow((1+i),n))/(Math.pow((1+i),n)-1).toDouble()
-        for (index in 1..n.toInt()){
+        for (index in 1..n.toInt()-periodoGracia!!.numCuotas){
             //LLevamos la anualidad a valor presente
             val diasTrasladar:Int = index*periodoPago!!.dias
             val diasTEP:Int = tasaCompensatoria.periodo.dias
@@ -188,10 +215,13 @@ class CreditoAnualidad:Credito {
                     amortizacion = roundTo2Decimals(amortizacion.toFloat()),
                     numeroCuota = index+periodoGracia!!.numCuotas
             )
+            interesAcumulado+=cuota.interesCompensatorio
             agregarCuota(cuota)
         }
     }
-
+    private fun calcularDiasEntreFechas(fechaInicio:LocalDate,fechaFin:LocalDate):Long{
+        return ChronoUnit.DAYS.between(fechaInicio,fechaFin);
+    }
 
     fun agregarCuota(cuota:Cuota){
         cuotas.add(cuota)

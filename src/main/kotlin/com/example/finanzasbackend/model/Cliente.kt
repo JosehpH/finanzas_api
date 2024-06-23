@@ -1,5 +1,8 @@
 package com.example.finanzasbackend.model
 
+import com.example.finanzasbackend.model.credito.CreditoAnualidad
+import com.example.finanzasbackend.model.credito.CreditoValoFuturo
+import com.example.finanzasbackend.model.credito.EstadoCuota
 import jakarta.persistence.*
 import lombok.Data
 
@@ -39,6 +42,26 @@ class Cliente {
             this.cuenta!!.asignarToCliente(this)
         }
             else throw IllegalArgumentException("No se puede aperturar una nueva cuenta porque ya existe una")
+    }
+
+    fun esApto():Boolean{
+        if(this.cuenta==null) return false
+        val creditos = this.cuenta!!.creditos
+        for (credito in creditos){
+            when(credito){
+                is CreditoValoFuturo -> {
+                    if(credito.cuota!!.estadoCuota==EstadoCuota.ATRASADA || credito.cuota!!.estadoCuota==EstadoCuota.PENDIENTE )
+                        return false
+                }
+                is CreditoAnualidad ->{
+                    for(cuota in credito.cuotas){
+                        if(cuota.estadoCuota==EstadoCuota.ATRASADA || cuota.estadoCuota==EstadoCuota.PENDIENTE)
+                            return false
+                    }
+                }
+            }
+        }
+        return true
     }
 
 }

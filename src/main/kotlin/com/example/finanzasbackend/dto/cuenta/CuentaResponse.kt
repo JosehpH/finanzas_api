@@ -7,6 +7,7 @@ import java.time.LocalDate
 data class CuentaResponse(
         val id:Long,
         val limiteCrediticio:Float,
-        val creditos:List<CreditoResponse?>?=null
+        val creditos:List<CreditoResponse?>?=null,
+        val interesAcumulado:Float?=null
 )
 

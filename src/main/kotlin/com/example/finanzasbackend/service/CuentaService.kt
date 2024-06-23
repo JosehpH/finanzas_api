@@ -31,6 +31,11 @@ class CuentaService(
     companion object{
         private val logger:Logger = LoggerFactory.getLogger(CuentaService::class.java)
     }
+    fun updateLimiteCrediticio(clienteId: Long, limiteNuevo:Float){
+        val cliente = clienteRepository.findById(clienteId).get()
+        cliente.cuenta!!.lineaCredito = limiteNuevo
+        clienteRepository.save(cliente)
+    }
     fun solicitarCredito(clienteId: Long, credito: Credito): Credito {
         val cliente = clientePerteneceAlNegocio(clienteId)
                 ?: throw BadRequestException("El cliente no pertenece al negocio")

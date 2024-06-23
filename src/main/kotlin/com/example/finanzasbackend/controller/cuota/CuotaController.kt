@@ -1,12 +1,15 @@
 package com.example.finanzasbackend.controller.cuota
 
 import com.example.finanzasbackend.dto.cuota.CuotaResponse
+import com.example.finanzasbackend.dto.cuota.PagoRequest
+import com.example.finanzasbackend.model.Pago
 import com.example.finanzasbackend.model.credito.Cuota
 import com.example.finanzasbackend.service.CuotaService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,10 +24,17 @@ class CuotaController(
         private val cuotaService: CuotaService
 ) {
     @Operation(summary = "En esta función puedes pagar cualquier cuota y actualizar el limite crediticio recuperando la amortización")
-    @PostMapping("/{cuentaId}/{cuotaId}/pagar")
-    fun pagarCuota(@PathVariable cuentaId:Long,@PathVariable cuotaId:Long, @RequestParam metodoPago:String):ResponseEntity<CuotaResponse>{
-        val cuota = cuotaService.pagarCuota(cuentaId = cuentaId, cuotaId = cuotaId, metodoPago = metodoPago)
+    @PostMapping("/{clienteId}/{cuotaId}/{creditoId}/pagar")
+    fun pagarCuota(@PathVariable creditoId:Long,@PathVariable clienteId:Long,@PathVariable cuotaId:Long, @RequestBody request: PagoRequest):ResponseEntity<CuotaResponse>{
+        val cuota = cuotaService.pagarCuota(creditoId = creditoId,clienteId = clienteId, cuotaId = cuotaId, metodoPago = request.metodoPago)
         return ResponseEntity(cuota.toResponse(),HttpStatus.OK)
+    }
+
+
+    @GetMapping("/{cuotaId}/{creditoId}")
+    fun getCuotaById(@PathVariable cuotaId:Long,@PathVariable creditoId:Long):ResponseEntity<Pago>{
+        val pagoInfo = cuotaService.getInfoPago(cuotaId,creditoId)
+        return ResponseEntity(pagoInfo,HttpStatus.OK)
     }
     private fun Cuota.toResponse():CuotaResponse =
             CuotaResponse(
@@ -38,6 +48,7 @@ class CuotaController(
                     metodoPago = this.metodoPago,
                     estadoCuota = this.estadoCuota?.name,
                     interesMoratorio = this.interesMoratorio,
-                    interesCompensatorioMora = this.interesCompensatorioMora
+                    interesCompensatorioMora = this.interesCompensatorioMora,
+                    montoPagado = this.montoPagado
             )
 }

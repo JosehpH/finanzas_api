@@ -147,8 +147,10 @@ class CreditoController(
                         tipo = if (this.tasaCompensatoria is TasaInteresNominal)
                             TipoTasaInteres.NOMINAL.name
                         else TipoTasaInteres.EFECTIVA.name,
-                        periodoCapitalizacion = TipoPeriodo.DIARIO.name
-
+                    periodoCapitalizacion = when(tasaCompensatoria){
+                        is TasaInteresNominal -> (tasaCompensatoria as TasaInteresNominal).periodoCapitalizacion!!.name
+                        else -> "-"
+                    }
                 ),
                 tasaMoratoria = TasaRequest(
                         periodo = this.tasaMoratoria.periodo.name,
@@ -156,8 +158,10 @@ class CreditoController(
                         tipo = if (this.tasaMoratoria is TasaInteresNominal)
                             TipoTasaInteres.NOMINAL.name
                         else TipoTasaInteres.EFECTIVA.name,
-                        periodoCapitalizacion = TipoPeriodo.DIARIO.name
-                ),
+                    periodoCapitalizacion = when(tasaMoratoria){
+                        is TasaInteresNominal -> (tasaMoratoria as TasaInteresNominal).periodoCapitalizacion!!.name
+                        else -> "-"
+                    }                  ),
                 fechaDesembolso = this.fechaDesembolso,
                 cuota = CuotaResponse(
                         id = this.cuota!!.id,
@@ -170,7 +174,8 @@ class CreditoController(
                         numeroCuota = this.cuota!!.numeroDeCuota,
                         fechaPago = this.cuota!!.fechaPago,
                         metodoPago = this.cuota!!.metodoPago,
-                        estadoCuota = this.cuota!!.estadoCuota?.name
+                        estadoCuota = this.cuota!!.estadoCuota?.name,
+                        montoPagado = this.cuota!!.montoPagado
                 )
         )
     }
@@ -256,7 +261,8 @@ class CreditoController(
                     metodoPago = it.metodoPago,
                     estadoCuota = it.estadoCuota?.name,
                     interesMoratorio = it.interesMoratorio,
-                    interesCompensatorioMora = it.interesCompensatorioMora
+                    interesCompensatorioMora = it.interesCompensatorioMora,
+                    montoPagado = it.montoPagado
             )
         }
         var gracia: GraciaResponse? = null
@@ -286,7 +292,10 @@ class CreditoController(
                         tipo = if (this.tasaCompensatoria is TasaInteresNominal)
                             TipoTasaInteres.NOMINAL.name
                         else TipoTasaInteres.EFECTIVA.name,
-                        periodoCapitalizacion = TipoPeriodo.DIARIO.name
+                        periodoCapitalizacion = when(tasaCompensatoria){
+                            is TasaInteresNominal -> (tasaCompensatoria as TasaInteresNominal).periodoCapitalizacion!!.name
+                            else -> "-"
+                        }
 
                 ),
                 tasaMoratoria = TasaRequest(
@@ -295,8 +304,10 @@ class CreditoController(
                         tipo = if (this.tasaMoratoria is TasaInteresNominal)
                             TipoTasaInteres.NOMINAL.name
                         else TipoTasaInteres.EFECTIVA.name,
-                        periodoCapitalizacion = TipoPeriodo.DIARIO.name
-                ),
+                    periodoCapitalizacion = when(tasaMoratoria){
+                        is TasaInteresNominal -> (tasaMoratoria as TasaInteresNominal).periodoCapitalizacion!!.name
+                        else -> "-"
+                    }                ),
                 fechaDesembolso = this.fechaDesembolso,
                 periodoGracia = gracia,
                 numCuotas = this.numCuotas!!.toInt(),

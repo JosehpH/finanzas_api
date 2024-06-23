@@ -17,6 +17,20 @@ class ClienteService(
         private val negocioRepository: NegocioRepository
 ) {
 
+    fun updateTelefono(clienteId: Long,telefono:String):Cliente{
+       val cliente = clienteRepository.findById(clienteId).get()
+        cliente.telefono = telefono
+        clienteRepository.save(cliente)
+        return cliente
+    }
+    fun updateEmail(clienteId: Long,email:String):Cliente{
+        val cliente = clienteRepository.findById(clienteId).get()
+        cliente.email = email
+        clienteRepository.save(cliente)
+        return cliente
+    }
+
+
     fun getAll() = clienteRepository.findAll()
 
     fun getAllByNegocio():List<Cliente> {
@@ -65,4 +79,11 @@ class ClienteService(
         return found.get()
     }
 
+    fun getIdByDniAndNegocioRuc(dni:String, rucNegocio:String):Long{
+        val cliente:Cliente? = clienteRepository.findByDniAndNegocio_Ruc(dni,rucNegocio).orElse(null)
+        if(cliente==null)
+            throw BadRequestException("El cliente no se ha encontrado para este negocio")
+        else
+            return cliente.id
+    }
 }

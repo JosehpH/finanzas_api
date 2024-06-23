@@ -42,6 +42,7 @@ abstract class Credito {
     @JoinColumn(name= "cuenta_id")
     var cuenta:Cuenta? = null
 
+    var interesAcumulado:Float= 0f
     constructor(){ }
     constructor(consumo:Orden,tasaCompensatoria: TasaInteres, tasaMoratoria: TasaInteres, pagoInicial: Float, fechaDesembolso: LocalDate) {
         this.consumo = consumo

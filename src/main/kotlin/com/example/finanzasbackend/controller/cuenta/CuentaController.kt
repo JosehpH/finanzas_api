@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -61,6 +62,12 @@ class CuentaController(
         val cuenta = cuentaService.getCuentaByClienteId(clienteId)
                 ?: throw Exception("El cliente no tiene una cuenta aperturada")
         return ResponseEntity(cuenta.toCuentaResponse(), HttpStatus.OK)
+    }
+
+    @PatchMapping("/{clienteId}")
+    fun updateLimiteCrediticio(@PathVariable clienteId: Long,@RequestBody request:UpdateLimiteCrediticioRequest):ResponseEntity<Unit>{
+        cuentaService.updateLimiteCrediticio(clienteId,request.limiteCrediticio)
+        return ResponseEntity(Unit, HttpStatus.OK)
     }
 
 
@@ -152,7 +159,8 @@ class CuentaController(
         return CuentaResponse(
                 id = this.id,
                 limiteCrediticio = this.lineaCredito,
-                creditos = creditos
+                creditos = creditos,
+                interesAcumulado = this.getInteresAcumulado()
         )
     }
 

@@ -33,11 +33,11 @@ class SecurityConfiguration(
                     .csrf { it.disable() }
                     .authorizeHttpRequests {
                         it
-                                .requestMatchers("/api/auth", "api/auth/refrsh", "/error")
-                                .permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/user")
-                                .permitAll()
-                                .requestMatchers("/api/user**").hasRole("ADMIN")
+                            .requestMatchers("/api/auth", "api/auth/refrsh", "/error")
+                           .permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/user")
+                            .permitAll()
+                            .requestMatchers("/api/user**").hasRole("ADMIN")
                                 .anyRequest()
                                 .permitAll()
 
@@ -54,7 +54,7 @@ class SecurityConfiguration(
         val source = UrlBasedCorsConfigurationSource()
         val config = CorsConfiguration()
         config.allowedOrigins = listOf("*")
-        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS")
         config.allowedHeaders = listOf("*")
         source.registerCorsConfiguration("/**", config)
         return CorsFilter(source)

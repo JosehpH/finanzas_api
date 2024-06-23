@@ -11,5 +11,7 @@ data class ClienteResponse(
         val email:String,
         val telefono:String,
         val photo:String?,
-        val cuenta:CuentaResponse?
+        val cuenta:CuentaResponse?,
+        val esApto: Boolean?=null,
+        val limiteCrediticio:Float?=null
 )
